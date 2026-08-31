@@ -1,0 +1,39 @@
+# Priorizar index.html sobre index.php (Para que Vue gane a WordPress)
+DirectoryIndex index.html index.php
+
+# .htaccess para Vue Router en la RAÍZ
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+  
+  # === AUTORIZACIÓN WORDPRESS REST API ===
+  # Permitir que las Contraseñas de Aplicación pasen por el encabezado HTTP
+  RewriteCond %{HTTP:Authorization} ^(.*)
+  RewriteRule ^(.*)$ - [E=HTTP_AUTHORIZATION:%1]
+
+  # 1. EXCEPCIONES: Dejar pasar peticiones reales de WordPress
+  RewriteCond %{REQUEST_URI} ^/wp-admin [NC,OR]
+  RewriteCond %{REQUEST_URI} ^/wp-json [NC,OR]
+  RewriteCond %{REQUEST_URI} ^/wp-login [NC,OR]
+  RewriteCond %{REQUEST_URI} ^/wp-content [NC,OR]
+  RewriteCond %{REQUEST_URI} ^/wp-includes [NC]
+  RewriteRule ^ - [L]
+
+  # 2. VUE ROUTER: Redirigir todo lo demás al index.html de Vue
+  RewriteRule ^index\.html$ - [L]
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule . /index.html [L]
+</IfModule>
+
+# Seguridad Básica
+Options -Indexes
+<IfModule mod_headers.c>
+  Header set X-XSS-Protection "1; mode=block"
+  Header set X-Content-Type-Options "nosniff"
+</IfModule>
+
+# Compresión GZIP
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css text/javascript application/javascript application/x-javascript application/json
+</IfModule>
